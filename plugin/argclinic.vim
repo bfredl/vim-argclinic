@@ -1,10 +1,10 @@
 " The Argument Clinic
 " very WIP
-function! Ch()
+function! s:ch()
     return matchstr(getline('.'), '\%' . col('.') . 'c.')
 endfunction
 
-function! InStr()
+function! s:inStr()
     return synIDattr(synID(line("."), col("."), 0), "name") =~? "string"
 endfunction
 
@@ -12,7 +12,7 @@ let s:beg = "([{"
 let s:end = ")]}"
 let s:re_spec = '\v[,(\[{)\]}]'
 
-function! SaveCur()
+function! s:saveCur()
     " from matchit
     let restore_cursor = virtcol(".") . "|"
     normal! g0
@@ -38,10 +38,10 @@ function! XFnd(rev,igstr)
         if res == 0
             return [0]
         endif
-        if a:igstr && InStr()
+        if a:igstr && s:inStr()
             continue
         endif
-        let ch = Ch()
+        let ch = s:ch()
         if stridx(stopat,ch) > -1
             let pos = getpos('.')[1:2]
             return pos + [ch]
@@ -55,8 +55,8 @@ function! XFnd(rev,igstr)
     endwhile
 endfunction
 
-function! XOuterArg()
-    let ch = Ch()
+function! s:InnerArg()
+    let ch = s:ch()
     let pos = [line('.'), col('.')]
     let ostart = []
     let oend = []
@@ -85,25 +85,30 @@ endfunction
 " TODO: use vim-textobj-user
 " i e to support to yanking to named register
 " and be less NIH u.s.w
-function! XInnerArg(ostart, oend)
-    call cursor(a:ostart[0], a:ostart[1])
+function! ArgClinicInnerArg()
+    let [ostart, oend] = XOuterArg()
+    call cursor(ostart[0], ostart[1])
     let res = search('\S','W')
-    normal! v
-    call cursor(a:oend[0], a:oend[1])
+    let st = getpos('.')
+    call cursor(oend[0], oend[1])
     let res = search('\S','Wb')
+    let en = getpos('.')
+    return ['v', st, en]
 endfunction
 
-function! VInnerArg()
-    let [ostart, oend] = XOuterArg()
-    call XInnerArg(ostart, oend)
-endfunction
+call textobj#user#plugin('argclinic', {
+\   'arg': {
+\     '*select-i-function*': 'ArgClinicInnerArg',
+\     'select-i': 'ie',
+\   },
+\ })
 
 " kinda "barf to register"
 " TODO: respect regspec
-function! DeleteArg()
-    let cur0 = SaveCur()
-    call VInnerArg()
-    normal y
+function! DeleteArg(register)
+    let cur0 = s:saveCur()
+    echo v:register
+    execute "normal \"".a:register."y\<Plug>(textobj-argclinic-arg-i)"
     execute cur0
 
     let [ostart, oend] = XOuterArg()
@@ -119,18 +124,20 @@ function! DeleteArg()
     if delstart || stridx(s:end,  oend[2]) > -1
         let res = search('\S','Wb')
         let delend = 0
-    end
+    endif
     normal! "_d
     "echo [delstart, delend]
     " cleanup leftover whitespace
-    if !delstart && Ch() == " "
+    if !delstart && s:ch() == " "
         normal! "_dw
-    end
+    endif
 endfunction
+" apparently, this is how it's done:
+noremap <expr> <Plug>(argclinic-deletearg) ':call DeleteArg("' . escape(v:register,'"') . '")<cr>'
 
 " kinda "slurp from register"
 function! PutArg(before)
-    let ch = Ch()
+    let ch = s:ch()
     let [ostart, oend] = XOuterArg()
     let regsave = [getreg('0'), getregtype('0')]
     let text = getreg(v:register)
@@ -144,7 +151,7 @@ function! PutArg(before)
     if before
         call cursor(ostart[0], ostart[1])
         let res = search('\S','W')
-        if stridx(s:end, Ch()) == -1
+        if stridx(s:end, s:ch()) == -1
             let text = text.', '
         endif
         call setreg('0', text, 'v')
@@ -152,7 +159,7 @@ function! PutArg(before)
     else
         call cursor(oend[0], oend[1])
         let res = search('\S','Wb')
-        if stridx(s:beg, Ch()) == -1
+        if stridx(s:beg, s:ch()) == -1
             let text = ', '.text
         endif
         call setreg('0', text, 'v')
