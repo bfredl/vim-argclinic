@@ -145,25 +145,38 @@ function! argclinic#DeleteArg(register)
     execute "normal \"".a:register."y\<Plug>(argclinic-selectarg)"
     execute cur0
 
+    let lnum = line('.')
+
     let [ostart, oend] = s:outerArg()
+    let delstart = (stridx(s:beg,ostart[2]) == -1)
+    let delend = (stridx(s:end,oend[2]) == -1)
+    " if we're surrounded by commas, try delete the one on the same line
+    if delstart && delend
+        if ostart[0] < lnum
+            let delstart = 0
+        else
+            let delend = 0
+        end
+    end
+
     call cursor(ostart[0], ostart[1])
-    let delstart = 1
-    if stridx(s:beg,ostart[2]) > -1
+    if !delstart
         let res = search('\S','W')
-        let delstart = 0
     endif
     normal! v
     call cursor(oend[0], oend[1])
-    let delend = 1
-    if delstart || stridx(s:end,  oend[2]) > -1
+    if !delend
         let res = search('\S','Wb')
-        let delend = 0
     endif
     normal! "_d
     "echo [delstart, delend]
     " cleanup leftover whitespace
-    if !delstart && s:ch() == " "
-        normal! "_dw
+    if !delstart && s:ch() =~ '\s'
+        if col('.') == col('$')-1
+            normal J
+        else
+            normal! "_dw
+        end
     endif
 endfunction
 
