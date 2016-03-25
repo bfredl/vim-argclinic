@@ -115,26 +115,34 @@ function! argclinic#innerArg()
     let [ostart, oend] = s:outerArg()
     call cursor(ostart[0], ostart[1])
     let res = search('\S','W')
-    let st = getpos('.')
+    let st = getpos('.')[1:2]
     call cursor(oend[0], oend[1])
     let res = search('\S','Wb')
-    let en = getpos('.')
-    return ['v', st, en]
+    let en = getpos('.')[1:2]
+    return [st, en]
 endfunction
 
-call textobj#user#plugin('argclinic', {
-\   'arg': {
-\     '*select-i-function*': 'argclinic#innerArg',
-\     'select-i': 'ie',
-\   },
-\ })
+function! argclinic#select(mode, start, end)
+    execute "normal! ".a:mode
+    call cursor(a:start[0], a:start[1])
+    normal! o
+    call cursor(a:end[0], a:end[1])
+    if &selection ==# 'exclusive'
+        normal! l
+    endif
+endfunction
+
+function! argclinic#selectinner()
+    let [start, end] = argclinic#innerArg()
+    call argclinic#select('v', start, end)
+endfunction
 
 " kinda "barf to register"
 " TODO: respect regspec
 function! argclinic#DeleteArg(register)
     let cur0 = s:saveCur()
     echo v:register
-    execute "normal \"".a:register."y\<Plug>(textobj-argclinic-arg-i)"
+    execute "normal \"".a:register."y\<Plug>(argclinic-selectarg)"
     execute cur0
 
     let [ostart, oend] = s:outerArg()

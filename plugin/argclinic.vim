@@ -10,3 +10,5 @@ noremap <Plug>(argclinic-nextarg) :<c-u>call argclinic#moveDelim(1,1,1)<cr>
 noremap <Plug>(argclinic-prevarg) :<c-u>call argclinic#moveDelim(-1,1,1)<cr>
 noremap <Plug>(argclinic-nextend) :<c-u>call argclinic#moveDelim(1,1,-1)<cr>
 noremap <Plug>(argclinic-prevend) :<c-u>call argclinic#moveDelim(-1,1,-1)<cr>
+
+noremap <Plug>(argclinic-selectarg) :<c-u>call argclinic#selectinner()<cr>
