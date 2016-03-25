@@ -62,6 +62,7 @@ endfunction
 " TODO: not as intended when adjusting forward?
 " ^(^ arg, arg2) jumps to arg2, should to arg?
 function! argclinic#moveDelim(dir,igstr, adjust)
+    let cur0 = s:saveCur()
     if a:adjust*a:dir < 0 && match(s:ch(), s:re_spec) == -1
         if a:adjust > 0
             call search('\S','Wb')
@@ -69,10 +70,10 @@ function! argclinic#moveDelim(dir,igstr, adjust)
             call search('\S','W')
         endif
     endif
-    let cur0 = s:saveCur()
     let status = argclinic#FindDelim(a:dir<0, a:igstr)
     if status[0] == 0
         execute cur0
+        return 0
     endif
     if a:adjust
         if a:adjust > 0
@@ -81,8 +82,8 @@ function! argclinic#moveDelim(dir,igstr, adjust)
             call search('\S','Wb')
         endif
     endif
+    return 1
 endfunction
-
 
 function! s:outerArg()
     let ch = s:ch()
