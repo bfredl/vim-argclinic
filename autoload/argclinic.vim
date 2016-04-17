@@ -24,7 +24,7 @@ function! s:saveCur()
 endfunction
 
 " maybe searchpairpos would help us but dunno how...
-function! argclinic#FindDelim(rev,igstr,stopend)
+function! argclinic#FindDelim(rev,igstr,stopend, skipstart)
     if !a:rev
         let flag = ''
         let stopat = ','.(a:stopend ? s:end : '')
@@ -33,6 +33,9 @@ function! argclinic#FindDelim(rev,igstr,stopend)
         let flag = 'b'
         let stopat = ','.(a:stopend ? s:beg : '')
         let matchat = s:end
+    endif
+    if a:skipstart && stridx(matchat,s:ch()) > -1
+        normal %
     endif
     while 1
         let res = search(s:re_spec,'W'.flag)
@@ -64,7 +67,7 @@ endfunction
 " adjust -1, 0, 1
 " TODO: not as intended when adjusting forward?
 " ^(^ arg, arg2) jumps to arg2, should to arg?
-function! argclinic#moveDelim(dir, igstr, adjust)
+function! argclinic#moveDelim(dir, igstr, adjust, skipstart)
     let cur0 = s:saveCur()
     let narrow = a:adjust*a:dir < 0
     if narrow && match(s:ch(), s:re_spec) == -1
@@ -74,7 +77,7 @@ function! argclinic#moveDelim(dir, igstr, adjust)
             call search('\S','W')
         endif
     endif
-    let status = argclinic#FindDelim(a:dir<0, a:igstr, narrow)
+    let status = argclinic#FindDelim(a:dir<0, a:igstr, narrow, a:skipstart)
     if status == 0
         execute cur0
         return 0
@@ -106,7 +109,7 @@ function! argclinic#moveArg(dir, igstr, adjust)
     endif
     " TODO: when moving nextarg and stading on a ")"
     if narrow || s:ch() !=~ s:re_spec
-        let status = argclinic#FindDelim(a:dir<0, a:igstr, 1)
+        let status = argclinic#FindDelim(a:dir<0, a:igstr, 1, 0)
     endif
     let adjustdir = a:adjust > 0 ? '' : 'b'
     call search('\S','W'.adjustdir)
@@ -117,13 +120,14 @@ function! s:outerArg()
     let pos = [line('.'), col('.')]
     let ostart = []
     let oend = []
+    " WRONG: on brackets look outward
     if stridx(s:beg, ch) > -1
         let ostart = pos + [ch]
     elseif stridx(s:end.',', ch) > -1
         let oend = pos + [ch]
     endif
     if ostart == []
-        let res = argclinic#FindDelim(1,1,1)
+        let res = argclinic#FindDelim(1,1,1,0)
         if res == 0
             return []
         endif

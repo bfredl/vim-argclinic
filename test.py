@@ -69,7 +69,7 @@ def test_simple_movement():
     move("<Plug>(argclinic-nextarg)",
          "mycall(arg, b, 3 + 4, 'arg')",
          "       a    b  c      d    e",
-         "      bbbbcccddddddd        ")
+         "       bbbcccddddddd        ")
 
     move("<Plug>(argclinic-nextend)",
          "mycall(arg, b, 3 + 4, 'arg')",
@@ -84,11 +84,16 @@ def test_simple_movement():
     move("<Plug>(argclinic-prevend)",
          "mycall(arg, b, 3 + 4, 'arg')",
          "         a  b      c      d ",
-         "           aaabbbbbbbccccccc")
+         "           aaabbbbbbbcccccc ")
 
 def test_complex_movement():
     # by design you can never reach the start of a first arg
     move("<Plug>(argclinic-nextarg)",
+         "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
+         "   a k   l   bm  n  0    c     opq  r    st   u     d    e",
+         "   bbllbbbbcccnccccccccdddddddddsrsssssddduudddddd        ")
+
+    move("<Plug>(argclinic-nextarg-in)",
          "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
          "   a k   l   bm  n  0    c     opq  r    st   u     d    e",
          "  bblllbbbbccnnccccccccddddddddsrrsssssdduuudddddd        ")
@@ -106,6 +111,11 @@ def test_complex_movement():
          #             a     bb          co        p
 
     move("<Plug>(argclinic-prevend)",
+         "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
+         "      k  la   m  n  0 b          q   rp    t  usoc      d ",
+         "        kk  aaaammaaaaaabbbbbbbbbbbqqqbbpppppttpbbbcccccc ")
+
+    move("<Plug>(argclinic-prevend-in)",
          "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
          "      k  la   m  n  0 b          q   rp    t  usoc      d ",
          "        kkk aaaammmaaaaabbbbbbbbbbbqqqqbppppptttpbbccccccc")
