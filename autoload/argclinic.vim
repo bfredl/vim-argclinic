@@ -24,20 +24,20 @@ function! s:saveCur()
 endfunction
 
 " maybe searchpairpos would help us but dunno how...
-function! argclinic#FindDelim(rev,igstr)
+function! argclinic#FindDelim(rev,igstr,stopend)
     if !a:rev
         let flag = ''
-        let stopat = s:end.','
+        let stopat = ','.(a:stopend ? s:end : '')
         let matchat = s:beg
     else
         let flag = 'b'
-        let stopat = s:beg.','
+        let stopat = ','.(a:stopend ? s:beg : '')
         let matchat = s:end
     endif
     while 1
         let res = search(s:re_spec,'W'.flag)
         if res == 0
-            return [0]
+            return 0
         endif
         if a:igstr && s:inStr()
             " TODO: if already in str, stay in str?
@@ -46,14 +46,17 @@ function! argclinic#FindDelim(rev,igstr)
         let ch = s:ch()
         if stridx(stopat,ch) > -1
             let pos = getpos('.')[1:2]
-            return pos + [ch]
+            return 1
         endif
         if stridx(matchat,ch) > -1
             normal %
             continue
         endif
+        if !a:stopend && stridx(a:rev ? s:beg : s:end, ch) > -1
+            continue
+        endif
         echoerr "FAIL"
-        return [0]
+        return 0
     endwhile
 endfunction
 
@@ -61,17 +64,18 @@ endfunction
 " adjust -1, 0, 1
 " TODO: not as intended when adjusting forward?
 " ^(^ arg, arg2) jumps to arg2, should to arg?
-function! argclinic#moveDelim(dir,igstr, adjust)
+function! argclinic#moveDelim(dir, igstr, adjust)
     let cur0 = s:saveCur()
-    if a:adjust*a:dir < 0 && match(s:ch(), s:re_spec) == -1
+    let narrow = a:adjust*a:dir < 0
+    if narrow && match(s:ch(), s:re_spec) == -1
         if a:adjust > 0
             call search('\S','Wb')
         else
             call search('\S','W')
         endif
     endif
-    let status = argclinic#FindDelim(a:dir<0, a:igstr)
-    if status[0] == 0
+    let status = argclinic#FindDelim(a:dir<0, a:igstr, narrow)
+    if status == 0
         execute cur0
         return 0
     endif
@@ -85,6 +89,29 @@ function! argclinic#moveDelim(dir,igstr, adjust)
     return 1
 endfunction
 
+" not used but copy its style?
+function! argclinic#moveArg(dir, igstr, adjust)
+    let cur0 = s:saveCur()
+    let indir = dir > 0 ? '' : 'b'
+    let antidir = dir > 0 ? 'b' : ''
+    let narrow = a:adjust*a:dir < 0
+    if !narrow && s:ch() =~ '\s'
+        " a "wide" movement could go too long, if we're in the space
+        " between a delimiter and an argument, back down a bit
+        call search('\S', 'W'.antidir)
+    elseif narrow && s:ch() !=~ s:re_spec
+        " a "narrow" movement must not be be stuck at it's target kind
+        " so skip ahead a bit
+        call search('\S','W'.indir)
+    endif
+    " TODO: when moving nextarg and stading on a ")"
+    if narrow || s:ch() !=~ s:re_spec
+        let status = argclinic#FindDelim(a:dir<0, a:igstr, 1)
+    endif
+    let adjustdir = a:adjust > 0 ? '' : 'b'
+    call search('\S','W'.adjustdir)
+endfunction
+
 function! s:outerArg()
     let ch = s:ch()
     let pos = [line('.'), col('.')]
@@ -96,15 +123,15 @@ function! s:outerArg()
         let oend = pos + [ch]
     endif
     if ostart == []
-        let res = argclinic#FindDelim(1,1)
-        if res[0] == 0
+        let res = argclinic#FindDelim(1,1,1)
+        if res == 0
             return []
         endif
         let ostart = res
     endif
     if oend == []
-        let res = argclinic#FindDelim(0,1)
-        if res[0] == 0
+        let res = argclinic#FindDelim(0,1,1)
+        if res == 0
             return []
         endif
         let oend = res

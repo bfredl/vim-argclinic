@@ -29,13 +29,19 @@ buf = vim.current.buffer
 win = vim.current.window
 
 #vim.command("call argclinic#innerArg()")
-
+ttest = False
 
 def move(movement, line, posdef, targets):
     buf[:] = [line]
     status = []
+    if ttest:
+        print(movement, file=sys.stderr)
+        print(line, file=sys.stderr)
+        print(posdef, file=sys.stderr)
+        print(targets, file=sys.stderr)
     for i,target in enumerate(targets):
         win.cursor = [1, i]
+        if ttest: sys.stderr.write(target)
         vim.input(movement)
         vim.eval("1")
         pos = win.cursor[1]
@@ -47,6 +53,7 @@ def move(movement, line, posdef, targets):
         else:
             status.append('-')
 
+    if ttest: sys.stderr.write('\n')
 
     status = ''.join(status)
     if status != len(targets)*'.':
@@ -62,8 +69,7 @@ def test_simple_movement():
     move("<Plug>(argclinic-nextarg)",
          "mycall(arg, b, 3 + 4, 'arg')",
          "       a    b  c      d    e",
-        #"      abbbbbcccdddddeeeeeee "  intended?
-         "      bbbbcccdddddddeeeeeee ")
+         "      bbbbcccddddddd        ")
 
     move("<Plug>(argclinic-nextend)",
          "mycall(arg, b, 3 + 4, 'arg')",
@@ -75,19 +81,17 @@ def test_simple_movement():
          "       a    b  c      d     ",
          "        aaaaabbbcccccccddddd")
 
-    # q is errornous
     move("<Plug>(argclinic-prevend)",
          "mycall(arg, b, 3 + 4, 'arg')",
-         "     q   a  b      c      d ",
-         "       qqqqaaabbbbbbbccccccc")
+         "         a  b      c      d ",
+         "           aaabbbbbbbccccccc")
 
 def test_complex_movement():
-    # numbers are dubious, we might want that kind of movement
-    # but it is not "nextarg"
+    # by design you can never reach the start of a first arg
     move("<Plug>(argclinic-nextarg)",
          "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
-         "   a k   l 2 bm  n  3    c     opq  r  4 st   u 567 d    e",
-         "  bblll222bccnn333cccccddddddd7srr4444s66uuu55567deeeeeee ")
+         "   a k   l   bm  n  0    c     opq  r    st   u     d    e",
+         "  bblllbbbbccnnccccccccddddddddsrrsssssdduuudddddd        ")
 
     move("<Plug>(argclinic-nextend)",
          "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
@@ -103,6 +107,5 @@ def test_complex_movement():
 
     move("<Plug>(argclinic-prevend)",
          "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
-         " 1 2  k  la3  m  n  0 b      456 q   rp7   t  usoc      d ",
-         "   11222kkk1aa33mmmaaaaabbbbbbb4566qqqq5pp777tttp4bccccccc")
-         #       k  l             b              b
+         "      k  la   m  n  0 b          q   rp    t  usoc      d ",
+         "        kkk aaaammmaaaaabbbbbbbbbbbqqqqbppppptttpbbccccccc")
