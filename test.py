@@ -50,10 +50,11 @@ def move(movement, line, posdef, targets):
 
     status = ''.join(status)
     if status != len(targets)*'.':
-        print(line)
-        print(posdef)
-        print(targets)
-        print(status)
+        print(movement, file=sys.stderr)
+        print(line, file=sys.stderr)
+        print(posdef, file=sys.stderr)
+        print(targets, file=sys.stderr)
+        print(status+"\n", file=sys.stderr)
         eq(status, len(targets)*'.')
 
 
@@ -61,7 +62,7 @@ def test_simple_movement():
     move("<Plug>(argclinic-nextarg)",
          "mycall(arg, b, 3 + 4, 'arg')",
          "       a    b  c      d    e",
-        #"      abbbbbcccdddddeeeeeee "  intended
+        #"      abbbbbcccdddddeeeeeee "  intended?
          "      bbbbcccdddddddeeeeeee ")
 
     move("<Plug>(argclinic-nextend)",
@@ -80,3 +81,28 @@ def test_simple_movement():
          "     q   a  b      c      d ",
          "       qqqqaaabbbbbbbccccccc")
 
+def test_complex_movement():
+    # numbers are dubious, we might want that kind of movement
+    # but it is not "nextarg"
+    move("<Plug>(argclinic-nextarg)",
+         "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
+         "   a k   l 2 bm  n  3    c     opq  r  4 st   u 567 d    e",
+         "  bblll222bccnn333cccccddddddd7srr4444s66uuu55567deeeeeee ")
+
+    move("<Plug>(argclinic-nextend)",
+         "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
+         "      k  la   m  n    b          q   rp    t  usoc      d ",
+         " aakkkllla bmmnnnbbbbbcccccccoopqrrrrp stttuuus   dddddd  ")
+         #   a      b b                c        o s      ???
+
+    move("<Plug>(argclinic-prevarg)",
+         "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
+         "   a k   l   bm  n       c     opq  r    st   u     d    e",
+         "    aakkkklaa bmmmnnnbbbbbccccc  pqqqrrpp sttttusocccddddd")
+         #             a     bb          co        p
+
+    move("<Plug>(argclinic-prevend)",
+         "do(a[22, 3], (x, y) + 3, array([[2, 33], [44, 5]]), 'arg')",
+         " 1 2  k  la3  m  n  0 b      456 q   rp7   t  usoc      d ",
+         "   11222kkk1aa33mmmaaaaabbbbbbb4566qqqq5pp777tttp4bccccccc")
+         #       k  l             b              b
