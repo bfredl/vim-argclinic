@@ -48,7 +48,6 @@ function! argclinic#FindDelim(rev,igstr,stopend, skipstart)
         endif
         let ch = s:ch()
         if stridx(stopat,ch) > -1
-            let pos = getpos('.')[1:2]
             return 1
         endif
         if stridx(matchat,ch) > -1
@@ -131,14 +130,14 @@ function! s:outerArg()
         if res == 0
             return []
         endif
-        let ostart = res
+        let ostart = getpos('.')[1:2]+[s:ch()]
     endif
     if oend == []
-        let res = argclinic#FindDelim(0,1,1)
+        let res = argclinic#FindDelim(0,1,0)
         if res == 0
             return []
         endif
-        let oend = res
+        let oend = getpos('.')[1:2]+[s:ch()]
     endif
     return [ostart, oend]
 endfunction
