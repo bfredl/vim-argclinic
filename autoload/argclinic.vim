@@ -133,7 +133,7 @@ function! s:outerArg()
         let ostart = getpos('.')[1:2]+[s:ch()]
     endif
     if oend == []
-        let res = argclinic#FindDelim(0,1,0)
+        let res = argclinic#FindDelim(0,1,1,0)
         if res == 0
             return []
         endif
